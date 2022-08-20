@@ -17,16 +17,18 @@ public class Publisher {
 		if (firstStep is null) throw new InvalidOperationException(
 			"Failed to publish message for Workflow. Workflow is undefined."
 		);
-		var exchange = connector.GetExchangeName(firstStep);
-		var routingKey = connector.GetRoutingKey(firstStep);
+		var exchange = firstStep.Exchange;
+		var routingKey = firstStep.RoutingKey;
 		var actionName = GetActionName(firstStep);
 		var message = new Message<T> {
-			Environment = connector.Environment,
-			Project = firstStep.Project,
-			Action = actionName,
 			Content = content,
+			CurrentStep = WorkflowStep.FromWorkerDefinition(firstStep),
+			PendingSteps = target.Steps
+				.Skip(1)
+				.Select(it => WorkflowStep.FromWorkerDefinition(it))
+				.ToArray(),
 		};
-		Publish(exchange, routingKey, message);
+		Publish(message);
 	}
 
 
@@ -37,10 +39,11 @@ public class Publisher {
 		return $"{target.Action} ({target.ActionVariant})";
 	}
 
-	public void Publish<T>(string exchange, string routingKey, Message<T> message) {
+	public void Publish<T>(Message<T> message) {
 		var serialized = JsonConvert.SerializeObject(message);
 		var binary = Encoding.UTF8.GetBytes(serialized);
-		Publish(exchange, routingKey, binary);
+		var step = message.CurrentStep;
+		Publish(step.Exchange, step.RoutingKey, binary);
 	}
 
 	public void Publish(string exchange, string routingKey, byte[] data) {

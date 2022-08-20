@@ -1,6 +1,7 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using HtmlAgilityPack;
+using RabbitMqConnector.Connection;
 using RabbitMqConnector.Entities;
 using RabbitMqConnector.Workflow;
 
@@ -8,10 +9,13 @@ namespace ExampleWorkflows.BlogScraper.Workers;
 
 using IDefinition = IWorkerDefinition<CrawlResult, CrawlResult, EmptyConfig>;
 
-public class FindNextPageWorker : IWorker<CrawlResult, CrawlResult> {
-	public IDefinition Definition { get; } = new FindNextPageDefinition();
+public class FindNextPageWorker : WorkerBase<CrawlResult, CrawlResult, EmptyConfig> {
+	public override IDefinition Definition { get; } = new FindNextPageDefinition();
 
-	public IEnumerable<CrawlResult> Process(CrawlResult input, EmptyConfig config) {
+	public override IEnumerable<CrawlResult> Process(
+		CrawlResult input,
+		EmptyConfig? config
+	) {
 		var doc = new HtmlDocument();
 		doc.LoadHtml(input.Html);
 		var firstPageLink = GetLinksByText(doc.DocumentNode, "ganzer Monat");
@@ -19,7 +23,7 @@ public class FindNextPageWorker : IWorker<CrawlResult, CrawlResult> {
 		if (hasFirstPageLink) {
 			var relativeUrl = firstPageLink!.First().Attributes["href"].Value;
 			// ToDo: [RMW-1] schedule next page crawl once branching feature is available
-			yield break;
+			yield return input;
 		}
 
 		var nextPageLink = GetLinksByText(doc.DocumentNode, "früher");

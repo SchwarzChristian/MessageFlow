@@ -6,22 +6,27 @@ using System.Threading.Tasks;
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using Newtonsoft.Json;
+using RabbitMqConnector.Connection;
 using RabbitMqConnector.Entities;
 using RabbitMqConnector.Workflow;
 
 namespace ExampleWorkflows.BlogScraper;
+using Definition = IWorkerDefinition<BlogPost, EndOfWorkflow, EmptyConfig>;
 
-public class PersistWorker : IWorker<BlogPost> {
+public class PersistWorker : WorkerBase<BlogPost, EndOfWorkflow, EmptyConfig> {
 	private Regex filenameCleaningRegex = new Regex(
-		$"[{Path.GetInvalidFileNameChars()}]+",
+		$"[/{Path.GetInvalidFileNameChars()}]+",
 		RegexOptions.Compiled
 	);
 	private const string outputDirectory = "./posts/";
 
-	public IWorkerDefinition<BlogPost, EndOfWorkflow, EmptyConfig> Definition => 
-		new PersistDefinition();
+	public override Definition Definition => new PersistDefinition();
 
-	public IEnumerable<EndOfWorkflow> Process(BlogPost input, EmptyConfig config) {
+	public override IEnumerable<EndOfWorkflow> Process(
+		BlogPost input,
+		EmptyConfig? config
+	) {
+		Directory.CreateDirectory(outputDirectory);
 		var serialized = JsonConvert.SerializeObject(input);
 		var filename = GetFilename(input);
 		File.WriteAllText(filename, serialized);
@@ -31,7 +36,7 @@ public class PersistWorker : IWorker<BlogPost> {
 	private string GetFilename(BlogPost input) {
 		string filename = outputDirectory;
 		if (input.PublicationDate.HasValue) {
-			filename = input.PublicationDate.Value.ToString();
+			filename = input.PublicationDate.Value.ToString("o");
 		} else {
 			filename = Guid.NewGuid().ToString();
 		}

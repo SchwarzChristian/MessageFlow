@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using RabbitMqConnector.Entities;
 
 namespace RabbitMqConnector.Workflow;
@@ -20,7 +21,10 @@ public class WorkflowBuilder<TFirst, TCurrent> {
 	public WorkflowBuilder<TFirst, TNext> Step<TStep, TNext, TConfig>(
 		TConfig? config = default
 	) where TStep : IWorkerDefinition<TCurrent, TNext, TConfig>, new() {
-		buildingFor.Steps.Add(new TStep { Config = config });
+		buildingFor.Steps.Add(new TStep { 
+			Config = config,
+			SerializedConfig = JsonConvert.SerializeObject(config),
+		});
 		return new WorkflowBuilder<TFirst, TNext>(buildingFor);
 	}
 }

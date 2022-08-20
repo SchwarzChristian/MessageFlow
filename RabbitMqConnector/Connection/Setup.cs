@@ -11,14 +11,11 @@ public class Setup {
 	}
 
 	public void SetupWorkflow<T>(Workflow<T> workflow) {
-		foreach (var step in workflow.Steps) {
-			SetupExchange(step);
-			SetupQueue(step);
-		}
+		workflow.Steps.Consume(SetupQueue);
 	}
 
 	public void SetupExchange(IWorkerDefinition definition) =>
-		SetupExchange(connector.GetExchangeName(definition));
+		SetupExchange(definition.Exchange);
 
 	public void SetupExchange(string name, string type = ExchangeType.Direct) {
 		using var chan = connector.OpenChannel();
@@ -26,12 +23,13 @@ public class Setup {
 	}
 
 	public void SetupQueue(IWorkerDefinition definition) => SetupQueue(
-		name: connector.GetQueueName(definition),
-		routingKey: connector.GetRoutingKey(definition),
-		exchange: connector.GetExchangeName(definition)
+		name: definition.QueueName,
+		routingKey: definition.RoutingKey,
+		exchange: definition.Exchange
 	);
 
 	public void SetupQueue(string name, string routingKey, string exchange) {
+		SetupExchange(exchange);
 		using var chan = connector.OpenChannel();
 		chan.QueueDeclare(
 			name,

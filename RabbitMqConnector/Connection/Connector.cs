@@ -7,12 +7,13 @@ namespace RabbitMqConnector.Connection;
 public class Connector : IConnector, IDisposable {
 	public string Environment => environment;
 
+	private Publisher publisher;
+	private Setup setup;
+
 	private string environment;
 	private ConnectionFactory connectionFactory;
 	private IConnection connection;
 	private bool isDisposed;
-	private Publisher publisher;
-	private Setup setup;
 
 	public Connector(RabbitMqConfig config) {
 		environment = config.Environment;
@@ -30,24 +31,11 @@ public class Connector : IConnector, IDisposable {
 
 	public IModel OpenChannel() => connection.CreateModel();
 
-	public string GetExchangeName(IWorkerDefinition target) {
-		return target.Project ?? "Main";
-	}
-
-	public string GetQueueName(IWorkerDefinition target) {
-		if (target.Project is null) return GetRoutingKey(target);
-		return $"{target.Project}.{GetRoutingKey(target)}";
-	}
-
-	public string GetRoutingKey(IWorkerDefinition target) {
-		var key = $"{target.InputTypeName}.{target.Action}";
-		if (target.ActionVariant is null) return key;
-		return $"{key}.{target.ActionVariant}";
-	}
-
+	public void SetupQueue(IWorkerDefinition definition) => setup.SetupQueue(definition);
 	public void SetupWorkflow<T>(Workflow<T> workflow) =>
 		setup.SetupWorkflow(workflow);
 
+	public void Publish<T>(Message<T> message) => publisher.Publish(message);
 	public void Publish<T>(Workflow<T> target, T content) =>
 		publisher.Publish(target, content);
 

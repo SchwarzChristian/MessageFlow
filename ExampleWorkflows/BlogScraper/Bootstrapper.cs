@@ -1,5 +1,7 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
+using ExampleWorkflows.BlogScraper.Workers;
+using RabbitMqConnector;
 using RabbitMqConnector.Connection;
 using RabbitMqConnector.Workflow;
 
@@ -17,8 +19,13 @@ public class Bootstrapper : IWorkflowBootstrapper {
             .Step<PersistDefinition>();
     }
 
-    public void Run(Connector connector) {
-        connector.SetupWorkflow(workflow);
+    public void Run(Connector connector, WorkerStarter starter) {
+        starter.StartWorkers(
+            new CrawlWorker(),
+            new FindNextPageWorker(),
+            new ScrapeWorker(),
+            new PersistWorker()
+        );
         var task = new CrawlingTask {
             Url = new Uri("http://blog.fefe.de/"),
         };

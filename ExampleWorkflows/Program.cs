@@ -1,4 +1,5 @@
 ﻿using ExampleWorkflows;
+using RabbitMqConnector;
 using RabbitMqConnector.Connection;
 using RabbitMqConnector.Entities;
 
@@ -29,7 +30,10 @@ internal class Program {
 
 		var bootstrapper = workflowMap[workflowName];
 		using var connector = new Connector(config);
-		bootstrapper.Run(connector);
+		using var starter = new WorkerStarter(config);
+		bootstrapper.Run(connector, starter);
+		Console.Out.WriteLine("Workers are now working. Hit Return to exit.");
+		Console.ReadLine();
     }
 
 	private static void Usage() {

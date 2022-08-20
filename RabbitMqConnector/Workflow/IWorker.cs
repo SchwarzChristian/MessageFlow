@@ -1,10 +1,7 @@
-using RabbitMqConnector.Entities;
+using RabbitMqConnector.Connection;
 
 namespace RabbitMqConnector.Workflow;
 
-public interface IWorker<TInput> : IWorker<TInput, EndOfWorkflow, EmptyConfig> { }
-public interface IWorker<TInput, TOutput> : IWorker<TInput, TOutput, EmptyConfig> { }
-public interface IWorker<TInput, TOutput, TConfig> {
-	public IWorkerDefinition<TInput, TOutput, TConfig> Definition { get; }
-	public IEnumerable<TOutput> Process(TInput input, TConfig config);
+public interface IWorker : IDisposable {
+	public void Run(IConnector connector);
 }
