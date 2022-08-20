@@ -10,7 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/ExampleWorkflows/bin/Debug/net6.0/ExampleWorkflows.dll",
-            "args": [],
+            "args": [
+                "blog-scraper"
+            ],
             "cwd": "${workspaceFolder}/ExampleWorkflows",
             "console": "internalConsole",
             "stopAtEntry": false

@@ -4,6 +4,11 @@
     <ProjectReference Include="..\RabbitMqConnector\RabbitMqConnector.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
+    <PackageReference Include="RestSharp" Version="108.0.1" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
