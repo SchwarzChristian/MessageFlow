@@ -20,5 +20,6 @@ public class WorkflowStep {
 	) => new WorkflowStep {
 		Exchange = definition.Exchange,
 		RoutingKey = definition.RoutingKey,
+		Config = definition.SerializedConfig,
 	};
 }

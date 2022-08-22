@@ -13,6 +13,7 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 	private bool disposedValue;
 
 	public abstract IWorkerDefinition<TInput, TOutput, TConfig> Definition { get; }
+	protected Message<TInput>? CurrentMessage { get; private set; }
 
 	public void Run(IConnector connector) {
 		this.connector = connector;
@@ -30,22 +31,59 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 	private void HandleNewMessage(object? sender, BasicDeliverEventArgs args) {
 		var message = GetMessage(args);
 		var config = GetConfig(message.CurrentStep);
-		var results = Process(message.Content, config);
-		if (!message.PendingSteps.Any()) return;
-
 		var newHistory = message.History.Concat(new [] { message.CurrentStep }).ToArray();
-		var newCurrentStep = message.PendingSteps.First();
+		var newCurrentStep = message.PendingSteps.FirstOrDefault();
 		var newPendingSteps = message.PendingSteps.Skip(1).ToArray();
-		channel!.BasicAck(args.DeliveryTag, multiple: false);
+
+		CurrentMessage = message;
+		var results = Process(message.Content, config);
+
 		foreach (var result in results) {
+			if (newCurrentStep is null) continue;
 			var newMessage = new Message<TOutput> {
 				Content = result,
 				CurrentStep = newCurrentStep,
 				History = newHistory,
 				PendingSteps = newPendingSteps,
+				NamedWorkflows = message.NamedWorkflows,
 			};
 			connector!.Publish(newMessage);
 		}
+
+		CurrentMessage = null;
+		channel!.BasicAck(args.DeliveryTag, multiple: false);
+	}
+
+	protected void BranchWorkflow<T>(string? workflowName, T content) {
+		if (workflowName is null) return;
+		if (CurrentMessage is null) throw new InvalidOperationException(
+			"Worker is not processing a message, currently!"
+		);
+
+		var workflow = CurrentMessage.NamedWorkflows
+			.FirstOrDefault(nw => nw.Name == workflowName)?
+			.Workflow;
+		BranchWorkflow(workflow, content);
+	}
+
+	protected void BranchWorkflow<T>(ICollection<WorkflowStep>? steps, T content) {
+		if (connector is null) throw new InvalidOperationException(
+			"Worker is not connected to RabbitMQ!"
+		);
+		if (CurrentMessage is null) throw new InvalidOperationException(
+			"Worker is not processing a message, currently!"
+		);
+		bool hasSteps = steps?.Any() ?? false;
+		if (!hasSteps) return;
+
+		var message = new Message<T> {
+			Content = content,
+			CurrentStep = steps!.First(),
+			PendingSteps = steps!.Skip(1).ToArray(),
+			History = CurrentMessage?.History ?? Array.Empty<WorkflowStep>(),
+			NamedWorkflows = CurrentMessage!.NamedWorkflows,
+		};
+		connector.Publish(message);
 	}
 
 	private Message<TInput> GetMessage(BasicDeliverEventArgs args) {

@@ -11,4 +11,7 @@ public class Message<T> {
 
 	public ICollection<WorkflowStep> History { get; set; }
 		= new List<WorkflowStep>();
+
+	public ICollection<NamedWorkflow> NamedWorkflows { get; set; } =
+		new List<NamedWorkflow>();
 }

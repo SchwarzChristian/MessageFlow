@@ -26,6 +26,7 @@ public class PersistWorker : WorkerBase<BlogPost, EndOfWorkflow, EmptyConfig> {
 		BlogPost input,
 		EmptyConfig? config
 	) {
+		Console.WriteLine($"persisting post from {input.PublicationDate?.Date}");
 		Directory.CreateDirectory(outputDirectory);
 		var serialized = JsonConvert.SerializeObject(input);
 		var filename = GetFilename(input);

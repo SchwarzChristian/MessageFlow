@@ -27,6 +27,7 @@ public class Publisher {
 				.Skip(1)
 				.Select(it => WorkflowStep.FromWorkerDefinition(it))
 				.ToArray(),
+			 NamedWorkflows = target.NamedWorkflows,
 		};
 		Publish(message);
 	}
