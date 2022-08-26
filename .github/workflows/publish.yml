@@ -1,4 +1,4 @@
-name: .NET
+name: Build, Test and Publish
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --logger trx
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
@@ -35,3 +35,4 @@ jobs:
       with:
         name: nuget
         path: RabbitMqConnector/bin/Debug/RabbitMqConnector.*.nupkg
+      
