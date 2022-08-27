@@ -6,6 +6,7 @@ namespace RabbitMqConnector.Connection;
 
 public interface IConnector : IDisposable {
 	string Environment { get; }
+	string ErrorExchangeName { get; }
 
 	IModel OpenChannel();
 
@@ -13,4 +14,5 @@ public interface IConnector : IDisposable {
 	void SetupWorkflow<T>(Workflow<T> workflow);
 	void Publish<T>(Workflow<T> target, T content);
 	void Publish<T>(Message<T> message);
+	void PublishError<T>(Message<T> message, Exception ex);
 }

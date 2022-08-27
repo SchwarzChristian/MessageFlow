@@ -19,6 +19,7 @@ public class PublisherTests {
         mockChannel = new Mock<IModel>();
         mockConnector = new Mock<IConnector>();
         mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
+		mockConnector.Setup(m => m.ErrorExchangeName).Returns("errors");
         publisher = new Publisher(mockConnector.Object);
     }
 
@@ -67,4 +68,41 @@ public class PublisherTests {
             new Step3().RoutingKey
         );
     }
+
+    [Test]
+    public void PublishErrorTest() {
+		var message = new Message<string> {
+			Content = "content",
+		};
+
+		var exception = new NotImplementedException();
+
+        mockChannel.Setup(m => m.BasicPublish(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<bool>(),
+            It.IsAny<IBasicProperties>(),
+            It.IsAny<ReadOnlyMemory<byte>>()
+        )).Callback(CheckErrorMessage);
+
+		publisher.PublishError(message, exception);
+
+	}
+	private void CheckErrorMessage(
+		string exchange,
+		string routingKey,
+		bool mandatory,
+		IBasicProperties props,
+		ReadOnlyMemory<byte> data
+	) {
+        var decoded = Encoding.UTF8.GetString(data.ToArray());
+        var errorMessage = JsonConvert.DeserializeObject<Error<string>>(decoded);
+		var expectedException = new NotImplementedException();
+
+		errorMessage.Should().NotBeNull();
+		errorMessage!.Message.Should().NotBeNull();
+		errorMessage!.Message?.Content.Should().Be("content");
+		errorMessage!.Problem.Should().Be(expectedException.Message);
+		errorMessage!.Type.Should().Be(nameof(NotImplementedException));
+	}
 }

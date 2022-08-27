@@ -14,4 +14,7 @@ public class Message<T> {
 
 	public ICollection<NamedWorkflow> NamedWorkflows { get; set; } =
 		new List<NamedWorkflow>();
+
+	public DateTime WorkflowStartedAt { get; set; }
+	public DateTime PublishedAt { get; set; }
 }

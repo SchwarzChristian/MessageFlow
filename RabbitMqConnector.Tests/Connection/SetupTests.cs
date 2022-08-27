@@ -1,5 +1,6 @@
 using RabbitMQ.Client;
 using RabbitMqConnector.Connection;
+using RabbitMqConnector.Entities;
 using RabbitMqConnector.Tests.Helper;
 using RabbitMqConnector.Workflow;
 
@@ -15,7 +16,8 @@ public class SetupTests {
 		mockChannel = new Mock<IModel>();
 		mockConnector = new Mock<IConnector>();
 		mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
-		setup = new Setup(mockConnector.Object);
+		mockConnector.Setup(m => m.ErrorExchangeName).Returns("errors");
+		setup = new Setup(mockConnector.Object, EnvironmentMode.VHost);
 	}
 
 	[Test]
@@ -52,5 +54,27 @@ public class SetupTests {
 				It.IsAny<IDictionary<string, object>>()
 			), Times.Once);
 		}
+	}
+
+	[Test]
+	public void SetupErrorQueueTest() {
+		mockConnector.Setup(m => m.Environment).Returns("env");
+
+		setup.SetupErrorQueue();
+
+		mockChannel.Verify(m => m.ExchangeDeclare(
+			"errors",
+			ExchangeType.Fanout,
+			true,
+			false,
+			It.IsAny<IDictionary<string, object>>()
+		), Times.Once);
+		mockChannel.Verify(m => m.QueueDeclare(
+			"errors",
+			true,
+			false,
+			false,
+			It.IsAny<IDictionary<string, object>>()
+		), Times.Once);
 	}
 }

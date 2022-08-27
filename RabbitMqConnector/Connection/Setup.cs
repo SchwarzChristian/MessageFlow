@@ -1,35 +1,52 @@
 using RabbitMQ.Client;
+using RabbitMqConnector.Entities;
 using RabbitMqConnector.Workflow;
 
 namespace RabbitMqConnector.Connection;
 
 public class Setup {
 	private readonly IConnector connector;
+	private readonly EnvironmentMode environmentMode;
 
-	public Setup(IConnector connector) {
+	public Setup(IConnector connector, EnvironmentMode environmentMode) {
 		this.connector = connector;
+		this.environmentMode = environmentMode;
 	}
 
 	public void SetupWorkflow<T>(Workflow<T> workflow) {
 		workflow.Steps.Consume(SetupQueue);
 	}
 
-	public void SetupExchange(IWorkerDefinition definition) =>
-		SetupExchange(definition.Exchange);
-
-	public void SetupExchange(string name, string type = ExchangeType.Topic) {
+	internal void SetupExchange(string name, string type = ExchangeType.Topic) {
 		using var chan = connector.OpenChannel();
 		chan.ExchangeDeclare(name, type, durable: true);
 	}
 
-	public void SetupQueue(IWorkerDefinition definition) => SetupQueue(
-		name: definition.QueueName,
-		routingKey: definition.RoutingKey,
-		exchange: definition.Exchange
-	);
+	public void SetupQueue(IWorkerDefinition definition) {
+		var exchange = definition.Exchange;
+		var queueName = definition.QueueName;
+		var routingKey = definition.RoutingKey;
 
-	public void SetupQueue(string name, string routingKey, string exchange) {
-		SetupExchange(exchange);
+		if (environmentMode == EnvironmentMode.NamePrefix) {
+			exchange = $"{connector.Environment}.{exchange}";
+			queueName = $"{connector.Environment}.{queueName}";
+			routingKey = $"{connector.Environment}.{routingKey}";
+		}
+
+		SetupQueue(
+			name: queueName,
+			routingKey: routingKey,
+			exchange: exchange
+		);
+	}
+
+	internal void SetupQueue(
+		string name,
+		string routingKey,
+		string exchange,
+		string exchangeType = ExchangeType.Topic
+	) {
+		SetupExchange(exchange, exchangeType);
 		using var chan = connector.OpenChannel();
 		chan.QueueDeclare(
 			name,
@@ -39,5 +56,15 @@ public class Setup {
 		);
 
 		chan.QueueBind(name, exchange, routingKey);
+	}
+
+	internal void SetupErrorQueue() {
+		var name = connector.ErrorExchangeName;
+		SetupQueue(
+			name: name,
+			routingKey: string.Empty,
+			exchange: name,
+			exchangeType: ExchangeType.Fanout
+		);
 	}
 }

@@ -3,10 +3,13 @@ using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMqConnector.Entities;
+using RabbitMqConnector.Exceptions;
 using RabbitMqConnector.Workflow;
 
 namespace RabbitMqConnector.Connection;
 
+public abstract class WorkerBase<TInput> : WorkerBase<TInput, EndOfWorkflow, EmptyConfig> { }
+public abstract class WorkerBase<TInput, TOutput> : WorkerBase<TInput, TOutput, EmptyConfig> { }
 public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposable {
 	public IConnector? connector { get; set; }
 	private IModel? channel;
@@ -28,7 +31,7 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		);
 	}
 
-	private void HandleNewMessage(object? sender, BasicDeliverEventArgs args) {
+	internal void HandleNewMessage(object? sender, BasicDeliverEventArgs args) {
 		var message = GetMessage(args);
 		var config = GetConfig(message.CurrentStep);
 		var newHistory = message.History.Concat(new [] { message.CurrentStep }).ToArray();
@@ -36,21 +39,32 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		var newPendingSteps = message.PendingSteps.Skip(1).ToArray();
 
 		CurrentMessage = message;
-		var results = Process(message.Content, config);
-
-		foreach (var result in results) {
-			if (newCurrentStep is null) continue;
-			var newMessage = new Message<TOutput> {
-				Content = result,
-				CurrentStep = newCurrentStep,
-				History = newHistory,
-				PendingSteps = newPendingSteps,
-				NamedWorkflows = message.NamedWorkflows,
-			};
-			connector!.Publish(newMessage);
+		bool doRequeueMessage = false;
+		try {
+			var results = Process(message.Content, config);
+			foreach (var result in results) {
+				if (newCurrentStep is null) continue;
+				var newMessage = new Message<TOutput> {
+					Content = result,
+					CurrentStep = newCurrentStep,
+					History = newHistory,
+					PendingSteps = newPendingSteps,
+					NamedWorkflows = message.NamedWorkflows,
+					WorkflowStartedAt = message.WorkflowStartedAt,
+				};
+				connector!.Publish(newMessage);
+			}
+		} catch (Exception ex) {
+			connector!.PublishError(message, ex);
+			if (ex is RecoverableException) doRequeueMessage = true;
 		}
 
 		CurrentMessage = null;
+		if (doRequeueMessage) {
+			channel!.BasicNack(args.DeliveryTag, multiple: false, requeue: true);
+			return;
+		}
+
 		channel!.BasicAck(args.DeliveryTag, multiple: false);
 	}
 
@@ -73,15 +87,17 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		if (CurrentMessage is null) throw new InvalidOperationException(
 			"Worker is not processing a message, currently!"
 		);
-		bool hasSteps = steps?.Any() ?? false;
-		if (!hasSteps) return;
+
+		if (steps is null) return;
+		if (!steps.Any()) return;
 
 		var message = new Message<T> {
 			Content = content,
-			CurrentStep = steps!.First(),
-			PendingSteps = steps!.Skip(1).ToArray(),
-			History = CurrentMessage?.History ?? Array.Empty<WorkflowStep>(),
+			CurrentStep = steps.First(),
+			PendingSteps = steps.Skip(1).ToArray(),
+			History = CurrentMessage!.History,
 			NamedWorkflows = CurrentMessage!.NamedWorkflows,
+			WorkflowStartedAt = CurrentMessage!.WorkflowStartedAt,
 		};
 		connector.Publish(message);
 	}

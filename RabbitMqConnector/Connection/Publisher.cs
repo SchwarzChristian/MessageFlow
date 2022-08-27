@@ -27,11 +27,11 @@ public class Publisher {
 				.Skip(1)
 				.Select(it => WorkflowStep.FromWorkerDefinition(it))
 				.ToArray(),
-			 NamedWorkflows = target.NamedWorkflows,
+			NamedWorkflows = target.NamedWorkflows,
+			WorkflowStartedAt = DateTime.Now,
 		};
 		Publish(message);
 	}
-
 
 	private string GetActionName(
 		IWorkerDefinition target
@@ -41,13 +41,28 @@ public class Publisher {
 	}
 
 	public void Publish<T>(Message<T> message) {
+		message.PublishedAt = DateTime.Now;
 		var serialized = JsonConvert.SerializeObject(message);
 		var binary = Encoding.UTF8.GetBytes(serialized);
 		var step = message.CurrentStep;
 		Publish(step.Exchange, step.RoutingKey, binary);
 	}
 
-	public void Publish(string exchange, string routingKey, byte[] data) {
+	internal void PublishError<T>(Message<T> message, Exception ex) {
+		var error = new Error<T> {
+			CreatedAt = DateTime.Now,
+			Message = message,
+			Problem = ex.Message,
+			StackTrace = ex.StackTrace?.Split("\n") ?? Array.Empty<string>(),
+			Type = ex.GetType().Name,
+		};
+		var serialized = JsonConvert.SerializeObject(error);
+		var binary = Encoding.UTF8.GetBytes(serialized);
+
+		Publish(connector.ErrorExchangeName, string.Empty, binary);
+	}
+
+	internal void Publish(string exchange, string routingKey, byte[] data) {
 		using var chan = connector.OpenChannel();
 		chan.BasicPublish(
 			exchange,

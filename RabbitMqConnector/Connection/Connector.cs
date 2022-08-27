@@ -6,6 +6,7 @@ namespace RabbitMqConnector.Connection;
 
 public class Connector : IConnector, IDisposable {
 	public string Environment => environment;
+	public string ErrorExchangeName => Environment + ".errors";
 
 	private Publisher publisher;
 	private Setup setup;
@@ -22,11 +23,15 @@ public class Connector : IConnector, IDisposable {
 			Port = config.Port,
 			UserName = config.Username,
 			Password = config.Passwort,
-			VirtualHost = config.Environment,
 		};
+		if (config.EnvironmentMode == EnvironmentMode.VHost) {
+			connectionFactory.VirtualHost = config.Environment;
+		}
+
 		connection = connectionFactory.CreateConnection();
 		publisher = new Publisher(this);
-		setup = new Setup(this);
+		setup = new Setup(this, config.EnvironmentMode);
+		setup.SetupErrorQueue();
 	}
 
 	public IModel OpenChannel() => connection.CreateModel();
@@ -35,7 +40,11 @@ public class Connector : IConnector, IDisposable {
 	public void SetupWorkflow<T>(Workflow<T> workflow) =>
 		setup.SetupWorkflow(workflow);
 
-	public void Publish<T>(Message<T> message) => publisher.Publish(message);
+	public void PublishError<T>(Message<T> message, Exception ex) => 
+		publisher.PublishError<T>(message, ex);
+
+	public void Publish<T>(Message<T> message) => 
+		publisher.Publish(message);
 	public void Publish<T>(Workflow<T> target, T content) =>
 		publisher.Publish(target, content);
 
