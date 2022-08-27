@@ -17,7 +17,7 @@ public class Setup {
 	public void SetupExchange(IWorkerDefinition definition) =>
 		SetupExchange(definition.Exchange);
 
-	public void SetupExchange(string name, string type = ExchangeType.Direct) {
+	public void SetupExchange(string name, string type = ExchangeType.Topic) {
 		using var chan = connector.OpenChannel();
 		chan.ExchangeDeclare(name, type, durable: true);
 	}
