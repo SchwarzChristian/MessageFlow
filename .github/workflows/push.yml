@@ -1,11 +1,13 @@
-name: Build, Test and Publish
+name: Push
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
 
 jobs:
-  publish:
+  push:
     runs-on: ubuntu-latest
     uses: ./.github/workflows/build-test.yml@master
     steps: []

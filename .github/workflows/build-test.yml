@@ -2,10 +2,6 @@ name: Build and Test
 
 on:
   workflow-call:
-  push:
-    branches: [ "develop" ]
-  pull_request:
-    branches: [ "develop" ]
 
 jobs:
   build:
