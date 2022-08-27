@@ -1,6 +1,7 @@
 name: Build and Test
 
 on:
+  workflow-call:
   push:
     branches: [ "develop" ]
   pull_request:
@@ -20,11 +21,30 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal --logger trx
+      run: dotnet test --no-build --logger trx --collect:"XPlat Code Coverage" --results-directory ./TestResults
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
       with:
         name: Test Results
-        path: RabbitMqConnector.Tests/TestResults/*.trx
+        path: TestResults/*.trx
         reporter: dotnet-trx
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: TestResults/*/In/*/coverage.cobertura.xml
+        badge: true
+        fail_below_min: true
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: '60 80'        
+    - name: Pack
+      run: dotnet pack --no-build
+    - name: Upload NuGet
+      uses: actions/upload-artifact@v3
+      with:
+        name: nuget
+        path: RabbitMqConnector/bin/Debug/RabbitMqConnector.*.nupkg
