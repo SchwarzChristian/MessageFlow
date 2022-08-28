@@ -1,5 +1,9 @@
 namespace MessageFlow.Exceptions;
 
+/// <summary>
+/// when a worker throws this exception while processing a message, the message
+/// will be redistributed to another worker; Useful to handle temporary problems
+/// </summary>
 [System.Serializable]
 public class RecoverableException : System.Exception
 {

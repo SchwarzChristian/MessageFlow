@@ -8,16 +8,34 @@ using MessageFlow.Workflow;
 
 namespace MessageFlow.Connection;
 
+/// <summary>
+/// base class for worker with no output and configuration
+/// </summary>
 public abstract class WorkerBase<TInput> : WorkerBase<TInput, EndOfWorkflow, EmptyConfig> { }
+
+/// <summary>
+/// base class for worker without config
+/// </summary>
 public abstract class WorkerBase<TInput, TOutput> : WorkerBase<TInput, TOutput, EmptyConfig> { }
+
+/// <summary>
+/// base class for workers
+/// </summary>
 public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposable {
-	public IConnector? connector { get; set; }
+	private IConnector? connector { get; set; }
 	private IModel? channel;
 	private bool disposedValue;
 
 	public abstract IWorkerDefinition<TInput, TOutput, TConfig> Definition { get; }
+
+	/// <summary>
+	/// message that is currently processed; null, if there is currently no message processed
+	/// </summary>
 	protected Message<TInput>? CurrentMessage { get; private set; }
 
+	/// <summary>
+	/// start the worker
+	/// </summary>
 	public void Run(IConnector connector) {
 		this.connector = connector;
 		channel = connector.OpenChannel();
@@ -68,6 +86,14 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		channel!.BasicAck(args.DeliveryTag, multiple: false);
 	}
 
+	/// <summary>
+	/// start a sub-workflow; this only works if the input message contains a named
+	/// workflow with the given name
+	/// </summary>
+	/// <exception cref="InvalidOperationException">
+	/// if the worker is not connected to RabbitMQ or if the worker is not processing
+	/// a message right now
+	/// </exception>
 	protected void BranchWorkflow<T>(string? workflowName, T content) {
 		if (workflowName is null) return;
 		if (CurrentMessage is null) throw new InvalidOperationException(
@@ -80,6 +106,15 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		BranchWorkflow(workflow, content);
 	}
 
+	/// <summary>
+	/// start a sub-workflow with hard-coded steps; you should prefer to use
+	/// <see cref="BranchWorkflow(string, T)" /> to be able to define the sub-workflow
+	/// together with the main workflow
+	/// </summary>
+	/// <exception cref="InvalidOperationException">
+	/// if the worker is not connected to RabbitMQ or if the worker is not processing
+	/// a message right now
+	/// </exception>
 	protected void BranchWorkflow<T>(ICollection<WorkflowStep>? steps, T content) {
 		if (connector is null) throw new InvalidOperationException(
 			"Worker is not connected to RabbitMQ!"
@@ -128,5 +163,8 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		GC.SuppressFinalize(this);
 	}
 
+	/// <summary>
+	/// process a single message
+	/// </summary>
 	public abstract IEnumerable<TOutput> Process(TInput input, TConfig? config);
 }

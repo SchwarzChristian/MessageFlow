@@ -4,6 +4,9 @@ using MessageFlow.Workflow;
 
 namespace MessageFlow;
 
+/// <summary>
+/// starts and stops workers
+/// </summary>
 public class WorkerStarter : IDisposable {
 	private bool disposedValue;
 	private ICollection<IWorker> startedWorkers = new List<IWorker>();
@@ -18,6 +21,10 @@ public class WorkerStarter : IDisposable {
 		this.connectorFactory = connectorFactory ?? (config => new Connector(config));
 	}
 
+	/// <summary>
+	/// automatically finds all worker classes and starts them; does not start workers
+	/// which already have a running instance
+	/// </summary>
 	public void StartAllWorkers() {
 		AppDomain.CurrentDomain
 			.GetAssemblies()
@@ -37,11 +44,14 @@ public class WorkerStarter : IDisposable {
 			.Contains(type);
 	}
 
+	/// <summary>
+	/// starts the given worker instances
+	/// </summary>
 	public void StartWorkers(params IWorker[] workers) {
 		workers.Consume(StartWorker);
 	}
 
-	public void StartWorker(IWorker? worker) {
+	private void StartWorker(IWorker? worker) {
 		if (worker is null) return;
 		worker.Run(connectorFactory(config));
 		startedWorkers.Add(worker);

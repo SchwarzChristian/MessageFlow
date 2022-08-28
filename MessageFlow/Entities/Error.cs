@@ -1,7 +1,7 @@
 namespace MessageFlow.Entities;
 
 /// <summary>
-/// An error catched during message processing.
+/// an error catched during message processing, as published to the error queue
 /// </summary>
 public class Error<T> {
 	/// <summary>

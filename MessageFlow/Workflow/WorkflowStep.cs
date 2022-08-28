@@ -2,9 +2,20 @@ using Newtonsoft.Json;
 
 namespace MessageFlow.Workflow;
 
+/// <summary>
+/// workflow step as it will be used in messages
+/// </summary>
 public class WorkflowStep {
+	/// <summary>
+	/// exchange to publish messages for this step to
+	/// </summary>
     public string Exchange { get; set; } = null!;
+
+	/// <summary>
+	/// routing key with which to publish messages for this step
+	/// </summary>
 	public string RoutingKey { get; set; } = null!;
+
 	public string? Config { get; set; }
 
 	public static WorkflowStep FromWorkerDefinition<TInput, TOutput, TConfig>(
