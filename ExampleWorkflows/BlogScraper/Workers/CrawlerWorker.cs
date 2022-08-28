@@ -1,8 +1,8 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Entities;
-using RabbitMqConnector.Workflow;
+using MessageFlow.Connection;
+using MessageFlow.Entities;
+using MessageFlow.Workflow;
 using RestSharp;
 
 namespace ExampleWorkflows.BlogScraper.Workers;

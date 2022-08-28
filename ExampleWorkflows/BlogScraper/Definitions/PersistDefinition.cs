@@ -1,5 +1,5 @@
 using ExampleWorkflows.BlogScraper.Entities;
-using RabbitMqConnector.Entities;
+using MessageFlow.Entities;
 
 namespace ExampleWorkflows.BlogScraper.Definitions;
 

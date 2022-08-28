@@ -1,7 +1,7 @@
 ﻿using ExampleWorkflows;
-using RabbitMqConnector;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Entities;
+using MessageFlow;
+using MessageFlow.Connection;
+using MessageFlow.Entities;
 
 internal class Program {
 	private static IDictionary<string, IWorkflowBootstrapper> workflowMap = 

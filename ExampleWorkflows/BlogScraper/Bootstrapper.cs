@@ -1,9 +1,9 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using ExampleWorkflows.BlogScraper.Workers;
-using RabbitMqConnector;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Workflow;
+using MessageFlow;
+using MessageFlow.Connection;
+using MessageFlow.Workflow;
 
 namespace ExampleWorkflows.BlogScraper;
 

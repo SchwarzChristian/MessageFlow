@@ -1,5 +1,5 @@
-using RabbitMqConnector;
-using RabbitMqConnector.Connection;
+using MessageFlow;
+using MessageFlow.Connection;
 
 namespace ExampleWorkflows;
 
