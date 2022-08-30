@@ -7,6 +7,8 @@ namespace MessageFlow.Workflow;
 /// </summary>
 /// <typeparam name="TFirstInput">input type of the first worker in the workflow</typeparam>
 public class Workflow<TFirstInput> {
+	private readonly RabbitMqConfig config;
+
 	public ICollection<IWorkerDefinition> Steps { get; } = new List<IWorkerDefinition>();
 	
 	/// <summary>
@@ -14,6 +16,10 @@ public class Workflow<TFirstInput> {
 	/// </summary>
 	public ICollection<NamedWorkflow> NamedWorkflows { get; } =
 		new List<NamedWorkflow>();
+
+	public Workflow(RabbitMqConfig config) {
+		this.config = config;
+	}
 
 	/// <summary>
 	/// returns a builder that provides a type-safe interface to define the steps in the workflow
@@ -24,10 +30,15 @@ public class Workflow<TFirstInput> {
 	}
 
 	public void AddNamedWorkflow<T>(string name, Workflow<T> workflow) {
+		string? namePrefix = null;
+		if (config.EnvironmentMode == EnvironmentMode.NamePrefix) {
+			namePrefix = config.Environment;
+		}
+
 		NamedWorkflows.Add(new NamedWorkflow { 
 			Name = name,
 			Workflow = workflow.Steps
-				.Select(WorkflowStep.FromWorkerDefinition)
+				.Select(it => WorkflowStep.FromWorkerDefinition(it, namePrefix))
 				.ToArray(),
 		});
 	}

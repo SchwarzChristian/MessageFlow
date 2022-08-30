@@ -4,5 +4,5 @@ using MessageFlow.Entities;
 namespace ExampleWorkflows.BlogScraper.Definitions;
 
 public class ScrapeDefinition : DefaultDefinition<CrawlResult, BlogPost> {
-	public override string? Project => nameof(BlogScraper);
+	public override string Project => nameof(BlogScraper);
 }

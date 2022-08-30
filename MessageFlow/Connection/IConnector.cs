@@ -9,9 +9,9 @@ namespace MessageFlow.Connection;
 /// </summary>
 public interface IConnector : IDisposable {
 	/// <summary>
-	/// environment to which the connector connects to
+	/// connection config the connector is using
 	/// </summary>
-	string Environment { get; }
+	RabbitMqConfig Config { get; }
 
 	/// <summary>
 	/// name of the exchange to publish error messages to

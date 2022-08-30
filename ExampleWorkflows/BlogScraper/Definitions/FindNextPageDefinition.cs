@@ -4,5 +4,5 @@ using MessageFlow.Entities;
 namespace ExampleWorkflows.BlogScraper.Definitions;
 
 public class FindNextPageDefinition : DefaultDefinition<CrawlResult, CrawlResult, FindNextPageConfig> {
-    public override string? Project => nameof(BlogScraper);
+    public override string Project => nameof(BlogScraper);
 }

@@ -57,6 +57,7 @@ public class WorkerBaseTests
 		mockConnector = new Mock<IConnector>();
 		mockChannel = new Mock<IModel>();
 		mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
+		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig { });
 		worker = new Worker();
 		worker.Run(mockConnector.Object);
 	}

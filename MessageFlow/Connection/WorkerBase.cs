@@ -42,11 +42,14 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		var consumer = new EventingBasicConsumer(channel);
 		consumer.Received += HandleNewMessage;
 		connector.SetupQueue(Definition);
-		channel.BasicConsume(
-			queue: Definition.QueueName,
-			autoAck: false,
-			consumer: consumer
-		);
+
+		// ToDo: [MF#10] move to Connector / new Consumer class
+		var queueName = Definition.QueueName;
+		if (connector.Config.EnvironmentMode == EnvironmentMode.NamePrefix) {
+			queueName = $"{connector.Config.Environment}.{queueName}";
+		}
+
+		channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
 	}
 
 	internal void HandleNewMessage(object? sender, BasicDeliverEventArgs args) {

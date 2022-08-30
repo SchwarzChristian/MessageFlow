@@ -16,21 +16,35 @@ public class WorkflowStep {
 	/// </summary>
 	public string RoutingKey { get; set; } = null!;
 
+	internal string QueueName { get; set; } = null!;
+
 	public string? Config { get; set; }
 
-	public static WorkflowStep FromWorkerDefinition<TInput, TOutput, TConfig>(
-		IWorkerDefinition<TInput, TOutput, TConfig> definition
+	internal static WorkflowStep FromWorkerDefinition<TInput, TOutput, TConfig>(
+		IWorkerDefinition<TInput, TOutput, TConfig> definition,
+		string? environmentPrefix
 	) {
-		var step = FromWorkerDefinition(definition);
+		var step = FromWorkerDefinition(definition, environmentPrefix);
 		step.Config = JsonConvert.SerializeObject(definition.Config);
 		return step;
 	}
 
-	public static WorkflowStep FromWorkerDefinition(
-		IWorkerDefinition definition
-	) => new WorkflowStep {
-		Exchange = definition.Exchange,
-		RoutingKey = definition.RoutingKey,
-		Config = definition.SerializedConfig,
-	};
+	internal static WorkflowStep FromWorkerDefinition(
+		IWorkerDefinition definition,
+		string? environmentPrefix
+	) {
+		if (environmentPrefix is null) return new WorkflowStep {
+			Exchange = definition.Exchange,
+			RoutingKey = definition.RoutingKey,
+			QueueName = definition.QueueName,
+			Config = definition.SerializedConfig,
+		};
+
+		return new WorkflowStep {
+			Exchange = $"{environmentPrefix}.{definition.Exchange}",
+			RoutingKey = definition.RoutingKey,
+			QueueName = $"{environmentPrefix}.{definition.QueueName}",
+			Config = definition.SerializedConfig,
+		};
+	}
 }

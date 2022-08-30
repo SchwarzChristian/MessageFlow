@@ -1,4 +1,3 @@
-using FluentAssertions;
 using MessageFlow.Tests.Helper;
 using MessageFlow.Workflow;
 
@@ -31,7 +30,7 @@ public class WorkflowTests {
         var namedWorkflow = workflow.NamedWorkflows.First();
         namedWorkflow.Name.Should().Be("name");
         namedWorkflow.Workflow.Select(s => s.Exchange)
-            .Should().ContainInOrder(steps.Select(s => s.Exchange));
+            .Should().ContainInOrder(steps.Select(s => "prod." + s.Exchange));
         namedWorkflow.Workflow.Select(s => s.RoutingKey)
             .Should().ContainInOrder(steps.Select(s => s.RoutingKey));
     }

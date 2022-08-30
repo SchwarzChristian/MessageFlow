@@ -6,38 +6,33 @@ namespace MessageFlow.Connection;
 
 public class Setup {
 	private readonly IConnector connector;
-	private readonly EnvironmentMode environmentMode;
 
-	public Setup(IConnector connector, EnvironmentMode environmentMode) {
+	public Setup(IConnector connector) {
 		this.connector = connector;
-		this.environmentMode = environmentMode;
 	}
 
 	public void SetupWorkflow<T>(Workflow<T> workflow) {
 		workflow.Steps.Consume(SetupQueue);
 	}
 
+	public void SetupQueue(IWorkerDefinition definition) {
+		string? namePrefix = null;
+		if (connector.Config.EnvironmentMode == EnvironmentMode.NamePrefix) {
+			namePrefix = connector.Config.Environment;
+		}
+
+		var step = WorkflowStep.FromWorkerDefinition(definition, namePrefix);
+
+		SetupQueue(
+			name: step.QueueName,
+			routingKey: step.RoutingKey,
+			exchange: step.Exchange
+		);
+	}
+
 	internal void SetupExchange(string name, string type = ExchangeType.Topic) {
 		using var chan = connector.OpenChannel();
 		chan.ExchangeDeclare(name, type, durable: true);
-	}
-
-	public void SetupQueue(IWorkerDefinition definition) {
-		var exchange = definition.Exchange;
-		var queueName = definition.QueueName;
-		var routingKey = definition.RoutingKey;
-
-		if (environmentMode == EnvironmentMode.NamePrefix) {
-			exchange = $"{connector.Environment}.{exchange}";
-			queueName = $"{connector.Environment}.{queueName}";
-			routingKey = $"{connector.Environment}.{routingKey}";
-		}
-
-		SetupQueue(
-			name: queueName,
-			routingKey: routingKey,
-			exchange: exchange
-		);
 	}
 
 	internal void SetupQueue(

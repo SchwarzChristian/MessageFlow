@@ -16,12 +16,13 @@ public class WorkerStarterTests
 		mockChannel = new Mock<IModel>();
 		mockConnector = new Mock<IConnector>();
 		mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
+		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig());
 	}
 
     [Test]
     public void StartAllWorkersTest() {
 		using var starter = new WorkerStarter(
-            new RabbitMqConfig(),
+            mockConnector.Object.Config,
             config => mockConnector.Object
         );
 

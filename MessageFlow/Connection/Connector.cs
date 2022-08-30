@@ -5,19 +5,24 @@ using MessageFlow.Workflow;
 namespace MessageFlow.Connection;
 
 public class Connector : IConnector, IDisposable {
-	public string Environment => environment;
-	public string ErrorExchangeName => Environment + ".errors";
+	public RabbitMqConfig Config { get; }
+	public string ErrorExchangeName { get {
+		if (Config.EnvironmentMode == EnvironmentMode.NamePrefix) {
+			return Config.Environment + ".errors";
+		}
+
+		return "errors";
+	}}
 
 	private Publisher publisher;
 	private Setup setup;
 
-	private string environment;
 	private ConnectionFactory connectionFactory;
 	private IConnection connection;
 	private bool isDisposed;
 
 	public Connector(RabbitMqConfig config) {
-		environment = config.Environment;
+		Config = config;
 		connectionFactory = new ConnectionFactory {
 			HostName = config.Hostname,
 			Port = config.Port,
@@ -30,7 +35,7 @@ public class Connector : IConnector, IDisposable {
 
 		connection = connectionFactory.CreateConnection();
 		publisher = new Publisher(this);
-		setup = new Setup(this, config.EnvironmentMode);
+		setup = new Setup(this);
 		setup.SetupErrorQueue();
 	}
 

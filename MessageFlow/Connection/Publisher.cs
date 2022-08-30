@@ -20,12 +20,17 @@ public class Publisher {
 		var exchange = firstStep.Exchange;
 		var routingKey = firstStep.RoutingKey;
 		var actionName = GetActionName(firstStep);
+		string? namePrefix = null;
+		if (connector.Config.EnvironmentMode == EnvironmentMode.NamePrefix) {
+			namePrefix = connector.Config.Environment;
+		}
+
 		var message = new Message<T> {
 			Content = content,
-			CurrentStep = WorkflowStep.FromWorkerDefinition(firstStep),
+			CurrentStep = WorkflowStep.FromWorkerDefinition(firstStep, namePrefix),
 			PendingSteps = target.Steps
 				.Skip(1)
-				.Select(it => WorkflowStep.FromWorkerDefinition(it))
+				.Select(it => WorkflowStep.FromWorkerDefinition(it, namePrefix))
 				.ToArray(),
 			NamedWorkflows = target.NamedWorkflows,
 			WorkflowStartedAt = DateTime.Now,

@@ -16,8 +16,9 @@ public class SetupTests {
 		mockChannel = new Mock<IModel>();
 		mockConnector = new Mock<IConnector>();
 		mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
-		mockConnector.Setup(m => m.ErrorExchangeName).Returns("errors");
-		setup = new Setup(mockConnector.Object, EnvironmentMode.VHost);
+		mockConnector.Setup(m => m.ErrorExchangeName).Returns("test.errors");
+		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig());
+		setup = new Setup(mockConnector.Object);
 	}
 
 	[Test]
@@ -27,7 +28,7 @@ public class SetupTests {
 		setup.SetupWorkflow(workflow);
 
 		mockChannel.Verify(m => m.ExchangeDeclare(
-			new Step1().Exchange,
+			"prod." + new Step1().Exchange,
 			It.IsAny<string>(),
 			true,
 			false,
@@ -41,15 +42,15 @@ public class SetupTests {
 		};
 		foreach (var step in steps) {
 			mockChannel.Verify(m => m.QueueDeclare(
-				step.QueueName,
+				"prod." + step.QueueName,
 				true,
 				false,
 				false,
 				It.IsAny<IDictionary<string, object>>()
 			), Times.Once);
 			mockChannel.Verify(m => m.QueueBind(
-				step.QueueName,
-				step.Exchange,
+				"prod." + step.QueueName,
+				"prod." + step.Exchange,
 				step.RoutingKey,
 				It.IsAny<IDictionary<string, object>>()
 			), Times.Once);
@@ -58,19 +59,19 @@ public class SetupTests {
 
 	[Test]
 	public void SetupErrorQueueTest() {
-		mockConnector.Setup(m => m.Environment).Returns("env");
+		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig());
 
 		setup.SetupErrorQueue();
 
 		mockChannel.Verify(m => m.ExchangeDeclare(
-			"errors",
+			"test.errors",
 			ExchangeType.Fanout,
 			true,
 			false,
 			It.IsAny<IDictionary<string, object>>()
 		), Times.Once);
 		mockChannel.Verify(m => m.QueueDeclare(
-			"errors",
+			"test.errors",
 			true,
 			false,
 			false,

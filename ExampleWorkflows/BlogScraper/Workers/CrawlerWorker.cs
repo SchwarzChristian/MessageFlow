@@ -2,6 +2,7 @@ using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using MessageFlow.Connection;
 using MessageFlow.Entities;
+using MessageFlow.Exceptions;
 using MessageFlow.Workflow;
 using RestSharp;
 
@@ -23,6 +24,10 @@ public class CrawlWorker : WorkerBase<CrawlingTask, CrawlResult, EmptyConfig> {
 		CrawlingTask input,
 		EmptyConfig? config
 	) {
+		if (new Random().NextDouble() < 0.1) {
+			throw new RecoverableException("random exception to test error handling");
+		}
+		
 		if (DateTime.Now < lastRequest + minInterval) {
 			Thread.Sleep(minInterval - (DateTime.Now - lastRequest));
 		}

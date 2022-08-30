@@ -20,7 +20,8 @@ public class PublisherTests {
         mockConnector = new Mock<IConnector>();
         mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
 		mockConnector.Setup(m => m.ErrorExchangeName).Returns("errors");
-        publisher = new Publisher(mockConnector.Object);
+		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig());
+		publisher = new Publisher(mockConnector.Object);
     }
 
     [Test]
@@ -55,7 +56,7 @@ public class PublisherTests {
         var decoded = Encoding.UTF8.GetString(data.ToArray());
         var message = JsonConvert.DeserializeObject<Message<string>>(decoded);
 
-        exchange.Should().Be(new Step1().Exchange);
+        exchange.Should().Be("prod." + new Step1().Exchange);
         routingKey.Should().Be(new Step1().RoutingKey);
         message?.Should().NotBeNull();
         message?.Content.Should().Be("message");

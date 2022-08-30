@@ -5,7 +5,7 @@ namespace MessageFlow.Tests.Helper;
 
 public class TestWorkflowBuilder {
 	internal Workflow<string> BuildWorkflow() {
-		var workflow = new Workflow<string>();
+		var workflow = new Workflow<string>(new RabbitMqConfig());
         workflow.Define()
             .Step<Step1, int>()
             .Step<Step2, bool, float>(5f)
