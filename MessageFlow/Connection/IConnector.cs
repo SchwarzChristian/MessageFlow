@@ -1,6 +1,7 @@
 using RabbitMQ.Client;
 using MessageFlow.Entities;
 using MessageFlow.Workflow;
+using RabbitMQ.Client.Events;
 
 namespace MessageFlow.Connection;
 
@@ -47,4 +48,19 @@ public interface IConnector : IDisposable {
 	/// <param name="message">message that caused the error</param>
 	/// <param name="ex">exception that occured while processing the message</param>
 	void PublishError<T>(Message<T> message, Exception ex);
+
+	/// <summary>
+	/// Registers a new consumer for the given worker definition.
+	/// </summary>
+	void Consume(IWorkerDefinition workerDefinition, Action<BasicDeliverEventArgs> action);
+
+	/// <summary>
+	/// acknowlages successful processing of the given message
+	/// </summary>
+	void Ack(ulong deliveryTag, bool doAckAllMessagesUntilThisTag = false);
+	
+	/// <summary>
+	/// rejects the given message
+	/// </summary>
+	void Reject(ulong deliveryTag, bool doRejectAllMessagesUntilThisTag = false);
 }

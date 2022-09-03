@@ -23,7 +23,6 @@ public abstract class WorkerBase<TInput, TOutput> : WorkerBase<TInput, TOutput, 
 /// </summary>
 public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposable {
 	private IConnector? connector { get; set; }
-	private IModel? channel;
 	private bool disposedValue;
 
 	public abstract IWorkerDefinition<TInput, TOutput, TConfig> Definition { get; }
@@ -38,21 +37,13 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 	/// </summary>
 	public void Run(IConnector connector) {
 		this.connector = connector;
-		channel = connector.OpenChannel();
-		var consumer = new EventingBasicConsumer(channel);
-		consumer.Received += HandleNewMessage;
-		connector.SetupQueue(Definition);
-
-		// ToDo: [MF#10] move to Connector / new Consumer class
-		var queueName = Definition.QueueName;
-		if (connector.Config.EnvironmentMode == EnvironmentMode.NamePrefix) {
-			queueName = $"{connector.Config.Environment}.{queueName}";
-		}
-
-		channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
+		connector.Consume(Definition, HandleNewMessage);
 	}
 
-	internal void HandleNewMessage(object? sender, BasicDeliverEventArgs args) {
+	internal void HandleNewMessage(BasicDeliverEventArgs args) {
+		if (connector is null) throw new InvalidOperationException(
+			"The worker is not connected to RabbitMQ"
+		);
 		var message = GetMessage(args);
 		var config = GetConfig(message.CurrentStep);
 		var newHistory = message.History.Concat(new [] { message.CurrentStep }).ToArray();
@@ -73,20 +64,20 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 					NamedWorkflows = message.NamedWorkflows,
 					WorkflowStartedAt = message.WorkflowStartedAt,
 				};
-				connector!.Publish(newMessage);
+				connector.Publish(newMessage);
 			}
 		} catch (Exception ex) {
-			connector!.PublishError(message, ex);
+			connector.PublishError(message, ex);
 			if (ex is RecoverableException) doRequeueMessage = true;
 		}
 
 		CurrentMessage = null;
 		if (doRequeueMessage) {
-			channel!.BasicNack(args.DeliveryTag, multiple: false, requeue: true);
+			connector.Reject(args.DeliveryTag);
 			return;
 		}
 
-		channel!.BasicAck(args.DeliveryTag, multiple: false);
+		connector.Ack(args.DeliveryTag);
 	}
 
 	/// <summary>
@@ -154,7 +145,6 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 	protected virtual void Dispose(bool disposing) {
 		if (disposedValue) return;
 		if (disposing) {
-			channel?.Dispose();
 			connector?.Dispose();
 		}
 

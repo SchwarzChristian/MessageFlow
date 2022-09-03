@@ -71,10 +71,10 @@ public class WorkerBaseTests
 
 		mockConnector.Setup(m => m.Publish(It.IsAny<Message<int>>())).Callback(CheckMessage);
 
-		worker.HandleNewMessage(null, args);
+		worker.HandleNewMessage(args);
 
 		mockConnector.Verify(m => m.Publish(It.IsAny<Message<int>>()), Times.Once);
-		mockChannel.Verify(m => m.BasicAck(80, It.IsAny<bool>()), Times.Once);
+		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Once);
 	}
 
     private void CheckMessage(Message<int> message) {
@@ -110,17 +110,16 @@ public class WorkerBaseTests
             It.IsAny<Exception>()
         )).Callback(CheckError);
 
-		worker.HandleNewMessage(null, args);
+		worker.HandleNewMessage(args);
 
 		mockConnector.Verify(m => m.PublishError(
 			It.IsAny<Message<string>>(),
 			It.IsAny<Exception>()
 		), Times.Once);
 
-		mockChannel.Verify(m => m.BasicAck(80, It.IsAny<bool>()), Times.Never);
-		mockChannel.Verify(m => m.BasicNack(
+		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Never);
+		mockConnector.Verify(m => m.Reject(
             It.IsAny<ulong>(),
-            It.IsAny<bool>(),
             It.IsAny<bool>()
         ), Times.Once);
 	}
@@ -142,12 +141,12 @@ public class WorkerBaseTests
             It.IsAny<Message<string>>()
         )).Callback(CheckBranchedMessage);
 
-		worker.HandleNewMessage(null, args);
+		worker.HandleNewMessage(args);
 
 		mockConnector.Verify(m => m.Publish(
 			It.IsAny<Message<string>>()
 		), Times.Once);
-		mockChannel.Verify(m => m.BasicAck(80, It.IsAny<bool>()), Times.Once);
+		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Once);
     }
 
     private void CheckBranchedMessage(Message<string> message) {

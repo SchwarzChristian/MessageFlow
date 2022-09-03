@@ -5,7 +5,7 @@ using MessageFlow.Workflow;
 
 namespace MessageFlow.Connection;
 
-public class Publisher {
+internal class Publisher {
 	private readonly IConnector connector;
 
 	public Publisher(IConnector connector) {

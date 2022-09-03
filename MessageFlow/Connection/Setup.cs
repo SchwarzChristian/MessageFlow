@@ -4,7 +4,7 @@ using MessageFlow.Workflow;
 
 namespace MessageFlow.Connection;
 
-public class Setup {
+internal class Setup {
 	private readonly IConnector connector;
 
 	public Setup(IConnector connector) {

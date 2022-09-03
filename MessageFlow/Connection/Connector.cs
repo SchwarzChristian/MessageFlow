@@ -1,6 +1,7 @@
 using RabbitMQ.Client;
 using MessageFlow.Entities;
 using MessageFlow.Workflow;
+using RabbitMQ.Client.Events;
 
 namespace MessageFlow.Connection;
 
@@ -16,6 +17,7 @@ public class Connector : IConnector, IDisposable {
 
 	private Publisher publisher;
 	private Setup setup;
+	private Consumer consumer;
 
 	private ConnectionFactory connectionFactory;
 	private IConnection connection;
@@ -37,6 +39,7 @@ public class Connector : IConnector, IDisposable {
 		publisher = new Publisher(this);
 		setup = new Setup(this);
 		setup.SetupErrorQueue();
+		consumer = new Consumer(this);
 	}
 
 	public IModel OpenChannel() => connection.CreateModel();
@@ -53,10 +56,26 @@ public class Connector : IConnector, IDisposable {
 	public void Publish<T>(Workflow<T> target, T content) =>
 		publisher.Publish(target, content);
 
+	public void Consume(
+		IWorkerDefinition workerDefinition,
+		Action<BasicDeliverEventArgs> args
+	) => consumer.Consume(workerDefinition, args);
+
+	public void Ack(ulong deliveryTag, bool doAckAllMessagesUntilThisTag = false) {
+		using var channel = OpenChannel();
+		channel.BasicAck(deliveryTag, doAckAllMessagesUntilThisTag);
+	}
+
+	public void Reject(ulong deliveryTag, bool doRejectAllMessagesUntilThisTag = false) {
+		using var channel = OpenChannel();
+		channel.BasicNack(deliveryTag, doRejectAllMessagesUntilThisTag, requeue: true);
+	}
+
 	protected virtual void Dispose(bool disposing) {
 		if (isDisposed) return;
 		if (disposing) {
 			connection.Dispose();
+			consumer.Dispose();
 		}
 
 		isDisposed = true;
