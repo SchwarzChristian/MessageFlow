@@ -42,7 +42,16 @@ public class Connector : IConnector, IDisposable {
 		consumer = new Consumer(this);
 	}
 
-	public IModel OpenChannel() => connection.CreateModel();
+	public IModel OpenChannel() {
+		CheckConnection();
+		return connection.CreateModel();
+	}
+
+	private void CheckConnection() {
+		if (connection.IsOpen) return;
+
+		connection = connectionFactory.CreateConnection();
+	}
 
 	public void SetupQueue(IWorkerDefinition definition) => setup.SetupQueue(definition);
 	public void SetupWorkflow<T>(Workflow<T> workflow) =>
@@ -56,18 +65,24 @@ public class Connector : IConnector, IDisposable {
 	public void Publish<T>(Workflow<T> target, T content) =>
 		publisher.Publish(target, content);
 
-	public void Consume(
+	public IModel Consume(
 		IWorkerDefinition workerDefinition,
 		Action<BasicDeliverEventArgs> args
 	) => consumer.Consume(workerDefinition, args);
 
-	public void Ack(ulong deliveryTag, bool doAckAllMessagesUntilThisTag = false) {
-		using var channel = OpenChannel();
+	public void Ack(
+		IModel channel,
+		ulong deliveryTag,
+		bool doAckAllMessagesUntilThisTag = false
+	) {
 		channel.BasicAck(deliveryTag, doAckAllMessagesUntilThisTag);
 	}
 
-	public void Reject(ulong deliveryTag, bool doRejectAllMessagesUntilThisTag = false) {
-		using var channel = OpenChannel();
+	public void Reject(
+		IModel channel,
+		ulong deliveryTag,
+		bool doRejectAllMessagesUntilThisTag = false
+	) {
 		channel.BasicNack(deliveryTag, doRejectAllMessagesUntilThisTag, requeue: true);
 	}
 

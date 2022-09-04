@@ -7,6 +7,25 @@ namespace MessageFlow.Entities;
 /// </summary>
 public class Message<T> {
 	/// <summary>
+	/// unique identifier of this message
+	/// </summary>
+	public Guid MessageId { get; set; } = Guid.NewGuid();
+
+	/// <summary>
+	/// Identifier for all messages belonging to a workflow run-through. Will be generated
+	/// for the first message in the worklfow and inherited by all subsequent messages.
+	/// Will be null if the message does not belong to a workflow run.
+	/// </summary>
+	public Guid? RunId { get; set; } = null;
+
+	/// <summary>
+	/// Identifier for the workflow branch the message belongs to. Will be generated
+	/// for the first message of the workflow ind inherited by all subsequent messages.
+	/// When starting a new sub-workflow, this identifier will be changed.
+	/// </summary>
+	public Guid? BranchId { get; set; } = null;
+
+	/// <summary>
 	/// payload
 	/// </summary>
 	public T Content { get; set; } = default!;

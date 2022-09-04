@@ -56,6 +56,7 @@ public abstract class DefaultDefinition<TInput, TOutput, TConfig> :
 	public virtual string Exchange => Project;
 	public virtual string QueueName => GetQueueName();
 	public virtual string RoutingKey => GetRoutingKey();
+	public virtual int PrefetchCount => 20;
 
 	private string GetQueueName() {
 		if (Project is null) return GetRoutingKey();

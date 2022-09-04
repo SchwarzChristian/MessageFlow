@@ -14,12 +14,13 @@ internal class Consumer : IDisposable {
 		this.connector = connector;
 	}
 
-	public void Consume(
+	public IModel Consume(
 		IWorkerDefinition workerDefinition,
 		Action<BasicDeliverEventArgs> action
 	) {
 		connector.SetupQueue(workerDefinition);
 		var channel = connector.OpenChannel();
+		channel.BasicQos(0, (ushort)workerDefinition.PrefetchCount, global: false);
 		openChannels.Add(channel);
 		var consumer = new EventingBasicConsumer(channel);
 		consumer.Received += (_, args) => action(args);
@@ -29,15 +30,13 @@ internal class Consumer : IDisposable {
 		}
 		
 		channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
+		return channel;
 	}
 
 	protected virtual void Dispose(bool disposing) {
-		if (disposedValue) {
-			return;
-		}
-
+		if (disposedValue) return;
 		if (disposing) {
-			openChannels.Consume(ch => ch.Dispose());
+			openChannels?.Consume(ch => ch.Dispose());
 		}
 
 		disposedValue = true;

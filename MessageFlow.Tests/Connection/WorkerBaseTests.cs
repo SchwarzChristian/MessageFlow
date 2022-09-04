@@ -57,6 +57,10 @@ public class WorkerBaseTests
 		mockConnector = new Mock<IConnector>();
 		mockChannel = new Mock<IModel>();
 		mockConnector.Setup(m => m.OpenChannel()).Returns(mockChannel.Object);
+		mockConnector.Setup(m => m.Consume(
+			It.IsAny<IWorkerDefinition>(),
+			It.IsAny<Action<BasicDeliverEventArgs>>()
+		)).Returns(mockChannel.Object);
 		mockConnector.Setup(m => m.Config).Returns(new RabbitMqConfig { });
 		worker = new Worker();
 		worker.Run(mockConnector.Object);
@@ -74,7 +78,7 @@ public class WorkerBaseTests
 		worker.HandleNewMessage(args);
 
 		mockConnector.Verify(m => m.Publish(It.IsAny<Message<int>>()), Times.Once);
-		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Once);
+		mockConnector.Verify(m => m.Ack(It.IsAny<IModel>(), 80, It.IsAny<bool>()), Times.Once);
 	}
 
     private void CheckMessage(Message<int> message) {
@@ -117,8 +121,9 @@ public class WorkerBaseTests
 			It.IsAny<Exception>()
 		), Times.Once);
 
-		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Never);
+		mockConnector.Verify(m => m.Ack(It.IsAny<IModel>(), 80, It.IsAny<bool>()), Times.Never);
 		mockConnector.Verify(m => m.Reject(
+			It.IsAny<IModel>(),
             It.IsAny<ulong>(),
             It.IsAny<bool>()
         ), Times.Once);
@@ -146,7 +151,7 @@ public class WorkerBaseTests
 		mockConnector.Verify(m => m.Publish(
 			It.IsAny<Message<string>>()
 		), Times.Once);
-		mockConnector.Verify(m => m.Ack(80, It.IsAny<bool>()), Times.Once);
+		mockConnector.Verify(m => m.Ack(It.IsAny<IModel>(), 80, It.IsAny<bool>()), Times.Once);
     }
 
     private void CheckBranchedMessage(Message<string> message) {

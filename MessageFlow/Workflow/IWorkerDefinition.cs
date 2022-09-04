@@ -44,4 +44,9 @@ public interface IWorkerDefinition {
 	/// serialized config as it is written to the message
 	/// </summary>
 	string? SerializedConfig { get; set; }
+
+	/// <summary>
+	/// number of messages to prefetch into memory for faster processing
+	/// </summary>
+	int PrefetchCount { get; }
 }

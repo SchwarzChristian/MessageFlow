@@ -26,6 +26,8 @@ internal class Publisher {
 		}
 
 		var message = new Message<T> {
+			RunId = Guid.NewGuid(),
+			BranchId = Guid.NewGuid(),
 			Content = content,
 			CurrentStep = WorkflowStep.FromWorkerDefinition(firstStep, namePrefix),
 			PendingSteps = target.Steps

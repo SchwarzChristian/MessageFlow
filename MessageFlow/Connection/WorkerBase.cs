@@ -32,16 +32,18 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 	/// </summary>
 	protected Message<TInput>? CurrentMessage { get; private set; }
 
+	private IModel? channel;
+
 	/// <summary>
 	/// start the worker
 	/// </summary>
 	public void Run(IConnector connector) {
 		this.connector = connector;
-		connector.Consume(Definition, HandleNewMessage);
+		channel = connector.Consume(Definition, HandleNewMessage);
 	}
 
 	internal void HandleNewMessage(BasicDeliverEventArgs args) {
-		if (connector is null) throw new InvalidOperationException(
+		if (connector is null || channel is null) throw new InvalidOperationException(
 			"The worker is not connected to RabbitMQ"
 		);
 		var message = GetMessage(args);
@@ -57,6 +59,8 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 			foreach (var result in results) {
 				if (newCurrentStep is null) continue;
 				var newMessage = new Message<TOutput> {
+					RunId = message.RunId,
+					BranchId = message.BranchId,
 					Content = result,
 					CurrentStep = newCurrentStep,
 					History = newHistory,
@@ -73,11 +77,11 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 
 		CurrentMessage = null;
 		if (doRequeueMessage) {
-			connector.Reject(args.DeliveryTag);
+			connector.Reject(channel, args.DeliveryTag);
 			return;
 		}
 
-		connector.Ack(args.DeliveryTag);
+		connector.Ack(channel, args.DeliveryTag);
 	}
 
 	/// <summary>
@@ -121,6 +125,8 @@ public abstract class WorkerBase<TInput, TOutput, TConfig> : IWorker, IDisposabl
 		if (!steps.Any()) return;
 
 		var message = new Message<T> {
+			RunId = CurrentMessage.RunId,
+			BranchId = Guid.NewGuid(),
 			Content = content,
 			CurrentStep = steps.First(),
 			PendingSteps = steps.Skip(1).ToArray(),

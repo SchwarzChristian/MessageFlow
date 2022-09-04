@@ -52,15 +52,18 @@ public interface IConnector : IDisposable {
 	/// <summary>
 	/// Registers a new consumer for the given worker definition.
 	/// </summary>
-	void Consume(IWorkerDefinition workerDefinition, Action<BasicDeliverEventArgs> action);
+	/// <returns>
+	/// The channel on which consumed messages need to be acknoledged or rejected.
+	/// </returns>
+	IModel Consume(IWorkerDefinition workerDefinition, Action<BasicDeliverEventArgs> action);
 
 	/// <summary>
 	/// acknowlages successful processing of the given message
 	/// </summary>
-	void Ack(ulong deliveryTag, bool doAckAllMessagesUntilThisTag = false);
+	void Ack(IModel channel, ulong deliveryTag, bool doAckAllMessagesUntilThisTag = false);
 	
 	/// <summary>
 	/// rejects the given message
 	/// </summary>
-	void Reject(ulong deliveryTag, bool doRejectAllMessagesUntilThisTag = false);
+	void Reject(IModel channel, ulong deliveryTag, bool doRejectAllMessagesUntilThisTag = false);
 }
