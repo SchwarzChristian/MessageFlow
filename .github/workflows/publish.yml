@@ -8,7 +8,17 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps: 
-    - uses: ./.github/workflows/build-test.yml
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Pack
+      run: dotnet pack -c Release --no-build
     - uses: actions/download-artifact@master
       with:
         name: nuget

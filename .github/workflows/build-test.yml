@@ -39,10 +39,3 @@ jobs:
         hide_complexity: true
         indicators: true
         thresholds: '60 80'
-    - name: Pack
-      run: dotnet pack -c Release --no-build
-    - name: Upload NuGet
-      uses: actions/upload-artifact@v3
-      with:
-        name: nuget
-        path: MessageFlow/bin/Debug/MessageFlow.*.nupkg
