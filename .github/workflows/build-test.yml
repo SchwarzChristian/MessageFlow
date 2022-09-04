@@ -43,7 +43,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@master
       with:
-        name: build-results
+        name: test-results
         path: .
     - name: Code Coverage Report
       uses: irongut/CodeCoverageSummary@v1.3.0
