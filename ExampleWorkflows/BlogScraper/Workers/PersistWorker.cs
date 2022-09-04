@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using Newtonsoft.Json;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Entities;
-using RabbitMqConnector.Workflow;
+using MessageFlow.Connection;
+using MessageFlow.Entities;
+using MessageFlow.Workflow;
 
 namespace ExampleWorkflows.BlogScraper;
 using Definition = IWorkerDefinition<BlogPost, EndOfWorkflow, EmptyConfig>;

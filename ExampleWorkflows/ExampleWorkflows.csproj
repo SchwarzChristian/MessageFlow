@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\RabbitMqConnector\RabbitMqConnector.csproj" />
+    <ProjectReference Include="..\MessageFlow\MessageFlow.csproj" />
   </ItemGroup>
 
   <ItemGroup>

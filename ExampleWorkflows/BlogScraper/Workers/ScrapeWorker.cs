@@ -1,9 +1,9 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using HtmlAgilityPack;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Entities;
-using RabbitMqConnector.Workflow;
+using MessageFlow.Connection;
+using MessageFlow.Entities;
+using MessageFlow.Workflow;
 
 namespace ExampleWorkflows.BlogScraper.Workers;
 using Definition = IWorkerDefinition<CrawlResult, BlogPost, EmptyConfig>;

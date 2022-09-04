@@ -1,21 +1,20 @@
 using ExampleWorkflows.BlogScraper.Definitions;
 using ExampleWorkflows.BlogScraper.Entities;
 using ExampleWorkflows.BlogScraper.Workers;
-using RabbitMqConnector;
-using RabbitMqConnector.Connection;
-using RabbitMqConnector.Workflow;
+using MessageFlow;
+using MessageFlow.Connection;
+using MessageFlow.Workflow;
 
 namespace ExampleWorkflows.BlogScraper;
 
 public class Bootstrapper : IWorkflowBootstrapper {
-    private Workflow<CrawlingTask> workflow;
     private const string findNextPageWorkflowName = "findNextPage";
 
-    public Bootstrapper() {
+    public void Run(Connector connector, WorkerStarter starter) {
         var findNextPageConfig = new FindNextPageConfig {
             CrawlNextPageWorkflow = findNextPageWorkflowName,
         };
-        workflow = new Workflow<CrawlingTask>();
+        var workflow = new Workflow<CrawlingTask>(connector.Config);
         workflow.Define()
             .Step<CrawlDefinition, CrawlResult>()
             .Step<FindNextPageDefinition, CrawlResult, FindNextPageConfig>(findNextPageConfig)
@@ -23,9 +22,6 @@ public class Bootstrapper : IWorkflowBootstrapper {
             .Step<PersistDefinition>();
 
         workflow.AddNamedWorkflow(findNextPageWorkflowName, workflow);
-    }
-
-    public void Run(Connector connector, WorkerStarter starter) {
         starter.StartWorkers(
             new CrawlWorker(),
             new FindNextPageWorker(),
