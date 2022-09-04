@@ -36,6 +36,10 @@ jobs:
       with:
         name: build-results
         path: .
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
     - name: Run Tests
       run: dotnet test --no-build --logger trx --collect:"XPlat Code Coverage" --results-directory ./TestResults
     - name: Test Report
