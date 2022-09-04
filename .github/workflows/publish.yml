@@ -7,8 +7,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/build-test.yml
     steps: 
+    - uses: ./.github/workflows/build-test.yml
     - uses: actions/download-artifact@master
       with:
         name: nuget
